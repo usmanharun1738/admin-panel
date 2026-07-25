@@ -4,26 +4,20 @@
 // -----------------------------------------------------------------------------
 
 import { useTable, useNavigation } from '@refinedev/core';
-import { List, Table, Space, Button, Tag, Popconfirm } from 'antd';
-import { EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
-import type { Product } from '../../types'; // we'll create types later
+import { List, Table, Space, Button, Tag } from 'antd';
+import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import type { Product } from '../../types';
 
 export const ProductList = () => {
-    // useTable handles fetching, pagination, and sorting automatically.
-    const { tableProps } = useTable<Product>({
-        resource: 'products',
-        // You can add filters, sorters, pagination config here
-    });
+    const { tableProps } = useTable<Product>({ resource: 'products' });
+    const { edit, create } = useNavigation();
 
-    const { edit, show, create } = useNavigation();
-
-    // Define table columns
     const columns = [
         {
             title: 'ID',
             dataIndex: 'id',
             key: 'id',
-            sorter: true, // enable sorting
+            sorter: true,
         },
         {
             title: 'Name',
@@ -81,9 +75,7 @@ export const ProductList = () => {
                         icon={<DeleteOutlined />}
                         size="small"
                         onClick={() => {
-                            // Delete confirmation handled by Popconfirm or directly via useDelete
-                            // For simplicity, we'll use the DeleteButton component from Refine's antd package.
-                            // But we can also use Popconfirm and useDelete hook.
+                            // Delete logic can be added here using useDelete hook
                         }}
                     >
                         Delete
@@ -94,13 +86,7 @@ export const ProductList = () => {
     ];
 
     return (
-        <List
-            title="Products"
-            canCreate
-            createButtonProps={{
-                onClick: () => create('products'),
-            }}
-        >
+        <List>
             <Table {...tableProps} columns={columns} rowKey="id" />
         </List>
     );

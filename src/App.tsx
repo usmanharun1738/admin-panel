@@ -7,7 +7,7 @@ import { Refine } from '@refinedev/core';
 import { RefineKbar, RefineKbarProvider } from '@refinedev/kbar';
 import routerProvider from '@refinedev/react-router-v6';
 import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
-import { AntdLayout, useNotificationProvider } from '@refinedev/antd';
+import { ThemedLayout, useNotificationProvider } from '@refinedev/antd'; // ✅ Changed
 
 import '@refinedev/antd/dist/reset.css';
 import './index.css'; // optional custom styles
@@ -32,15 +32,10 @@ function App() {
     <BrowserRouter>
       <RefineKbarProvider>
         <Refine
-          // Authentication provider – handles login/logout
           authProvider={authProvider}
-          // Data provider – communicates with your Go backend
           dataProvider={dataProvider()}
-          // Router provider – integrates react-router-v6
           routerProvider={routerProvider}
-          // Notification provider – Ant Design notifications
           notificationProvider={useNotificationProvider}
-          // Resources – define the main entities of the admin panel
           resources={[
             {
               name: 'dashboard',
@@ -66,41 +61,35 @@ function App() {
               meta: { label: 'Users' },
             },
           ]}
-          // Options
           options={{
             syncWithLocation: true,
             warnWhenUnsavedChanges: true,
           }}
-          // Layout – uses Ant Design's layout with sidebar and header
-          Layout={AntdLayout}
-          // Default title and favicon
-          Title={() => <span style={{ fontSize: 20, fontWeight: 'bold' }}>Admin Panel</span>}
-        // Sider (sidebar) – customisation can be added here
         >
           <Routes>
-            {/* Dashboard – root path */}
-            <Route path="/" element={<Dashboard />} />
-
-            {/* Products */}
-            <Route path="/products">
-              <Route index element={<ProductList />} />
-              <Route path="create" element={<ProductCreate />} />
-              <Route path="edit/:id" element={<ProductEdit />} />
-            </Route>
-
-            {/* Orders */}
-            <Route path="/orders">
-              <Route index element={<OrderList />} />
-              <Route path="show/:id" element={<OrderShow />} />
-            </Route>
-
-            {/* Users */}
-            <Route path="/users">
-              <Route index element={<UserList />} />
+            {/* ✅ Wrap Routes inside ThemedLayoutV2 */}
+            <Route
+              element={
+                <ThemedLayout Title={() => <span style={{ fontSize: 20, fontWeight: 'bold' }}>Admin Panel</span>}>
+                  <Outlet />
+                </ThemedLayout>
+              }
+            >
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/products">
+                <Route index element={<ProductList />} />
+                <Route path="create" element={<ProductCreate />} />
+                <Route path="edit/:id" element={<ProductEdit />} />
+              </Route>
+              <Route path="/orders">
+                <Route index element={<OrderList />} />
+                <Route path="show/:id" element={<OrderShow />} />
+              </Route>
+              <Route path="/users">
+                <Route index element={<UserList />} />
+              </Route>
             </Route>
           </Routes>
-
-          {/* Global command palette (Ctrl+K) */}
           <RefineKbar />
         </Refine>
       </RefineKbarProvider>

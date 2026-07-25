@@ -1,38 +1,26 @@
-// -----------------------------------------------------------------------------
-// Order List – Shows all orders with status, total, date, and actions.
-// Uses useTable for data fetching with default sorting by creation date.
-// Provides a dropdown to update order status inline.
-// -----------------------------------------------------------------------------
-
-import { useTable, useNavigation, useUpdate } from '@refinedev/core';
-import { List, Table, Space, Button, Dropdown, Menu, Tag, message } from 'antd';
+import { useNavigation, useUpdate } from '@refinedev/core';
+import { useTable } from '@refinedev/antd'; // ✅ Import from @refinedev/antd
+import { List, Table, Space, Button, Dropdown, Menu, message } from 'antd';
 import { EyeOutlined, MoreOutlined } from '@ant-design/icons';
 import type { Order } from '../../types';
 import { StatusBadge } from '../../components/StatusBadge';
 
 export const OrderList = () => {
-    // Fetch orders with default sorting: newest first
     const { tableProps } = useTable<Order>({
         resource: 'orders',
-        sorters: {
-            initial: [{ field: 'created_at', order: 'desc' }],
-        },
+        sorters: { initial: [{ field: 'created_at', order: 'desc' }] },
     });
 
     const { show } = useNavigation();
-    const { mutate: updateStatus, isLoading: isUpdating } = useUpdate<Order>();
+    const { mutate: updateStatus, mutation } = useUpdate<Order>();
+    const isUpdating = mutation.isPending;
 
-    // Handle status update via dropdown
     const handleStatusChange = (orderId: number, newStatus: Order['status']) => {
         updateStatus(
             {
                 resource: 'orders',
                 id: orderId,
                 values: { status: newStatus },
-                // Since our backend uses PATCH /orders/:id/status?  Actually we defined admin endpoint.
-                // We'll use custom endpoint later, but for now, the default update may not work.
-                // We'll handle this via custom mutation or adjust dataProvider.
-                // For now, we'll use the default update which expects PATCH /orders/:id
             },
             {
                 onSuccess: () => {
@@ -45,7 +33,6 @@ export const OrderList = () => {
         );
     };
 
-    // Build dropdown menu for status options
     const getStatusMenu = (orderId: number) => {
         const statusOptions: Order['status'][] = ['pending', 'paid', 'shipped', 'delivered'];
         return (
@@ -59,7 +46,6 @@ export const OrderList = () => {
         );
     };
 
-    // Define columns
     const columns = [
         {
             title: 'Order ID',
@@ -86,14 +72,13 @@ export const OrderList = () => {
             key: 'status',
             render: (status: Order['status']) => <StatusBadge status={status} />,
             sorter: true,
-            filterMultiple: false,
             filters: [
                 { text: 'Pending', value: 'pending' },
                 { text: 'Paid', value: 'paid' },
                 { text: 'Shipped', value: 'shipped' },
                 { text: 'Delivered', value: 'delivered' },
             ],
-            onFilter: (value, record) => record.status === value,
+            onFilter: (value: boolean | React.Key, record: Order) => record.status === value,
         },
         {
             title: 'Created At',
@@ -105,7 +90,7 @@ export const OrderList = () => {
         {
             title: 'Actions',
             key: 'actions',
-            render: (_, record: Order) => (
+            render: (_: unknown, record: Order) => (
                 <Space>
                     <Button
                         icon={<EyeOutlined />}
@@ -123,7 +108,7 @@ export const OrderList = () => {
     ];
 
     return (
-        <List title="Orders">
+        <List>
             <Table {...tableProps} columns={columns} rowKey="id" />
         </List>
     );

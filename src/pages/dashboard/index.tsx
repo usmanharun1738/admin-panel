@@ -1,10 +1,10 @@
 // -----------------------------------------------------------------------------
 // Dashboard – Displays key business metrics, charts, and recent orders.
-// Uses useCustom to fetch aggregated data from the backend.
+// Uses useList to fetch aggregated data from the backend.
 // -----------------------------------------------------------------------------
 
-import { useCustom, useList } from '@refinedev/core';
-import { Card, Row, Col, Statistic, Table, Tag } from 'antd';
+import { useList } from '@refinedev/core';
+import { Card, Row, Col, Statistic, Table } from 'antd';
 import {
     ShoppingCartOutlined,
     DollarOutlined,
@@ -26,64 +26,65 @@ import {
 } from 'recharts';
 import type { Order, User } from '../../types';
 import { StatusBadge } from '../../components/StatusBadge';
-
 // Chart colors for status distribution
 const COLORS = {
-    pending: '#faad14', // orange
-    paid: '#1677ff',    // blue
-    shipped: '#13c2c2', // cyan
-    delivered: '#52c41a', // green
+    pending: '#faad14',
+    paid: '#1677ff',
+    shipped: '#13c2c2',
+    delivered: '#52c41a',
 };
 
-// Format currency
-const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('en-US', {
+// Format currency – handles both number and string inputs
+const formatCurrency = (value: number | string) => {
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'USD',
-    }).format(value);
+    }).format(num);
+};
 
 export const Dashboard = () => {
-    // Fetch all orders to calculate metrics
-    const { data: ordersData, isLoading: ordersLoading } = useList<Order>({
+    // ✅ useList returns { query, result } in v5, so we destructure 'result' to get data
+    const { result: ordersResult, query: ordersQuery } = useList<Order>({
         resource: 'orders',
-        pagination: { pageSize: 1000 }, // Fetch all orders for aggregation
+        pagination: { pageSize: 1000 },
     });
+    const orders = ordersResult?.data || [];
 
-    // Fetch all users for total count
-    const { data: usersData, isLoading: usersLoading } = useList<User>({
+    const { result: usersResult, query: usersQuery } = useList<User>({
         resource: 'users',
         pagination: { pageSize: 1000 },
     });
+    const users = usersResult?.data || [];
 
-    // Fetch recent orders (last 10) for the activity table
-    const { data: recentOrders, isLoading: recentLoading } = useList<Order>({
+    const { result: recentResult, query: recentQuery } = useList<Order>({
         resource: 'orders',
         pagination: { pageSize: 10 },
-        sorters: { initial: [{ field: 'created_at', order: 'desc' }] },
+        sorters: [{ field: 'created_at', order: 'desc' }], // ✅ fixed: removed 'initial'
     });
+    const recentOrders = recentResult?.data || [];
 
-    // Compute metrics from orders
-    const orders = ordersData?.data || [];
+    const isLoading = ordersQuery.isLoading || usersQuery.isLoading || recentQuery.isLoading;
+
     const totalOrders = orders.length;
     const totalRevenue = orders.reduce((sum, order) => sum + order.total_price, 0);
-    const totalUsers = usersData?.data?.length || 0;
+    const totalUsers = users.length;
 
-    // Calculate order status distribution for pie chart
+    // Order status distribution
     const statusCounts = orders.reduce((acc, order) => {
         acc[order.status] = (acc[order.status] || 0) + 1;
         return acc;
     }, {} as Record<string, number>);
 
-    // Prepare data for the pie chart
     const statusChartData = Object.entries(statusCounts).map(([status, count]) => ({
         name: status.charAt(0).toUpperCase() + status.slice(1),
         value: count,
         status,
     }));
 
-    // Prepare data for the revenue trend chart (group by date)
+    // Revenue trend
     const revenueTrend = orders
-        .filter(order => order.status === 'paid' || order.status === 'shipped' || order.status === 'delivered')
+        .filter(order => ['paid', 'shipped', 'delivered'].includes(order.status))
         .reduce((acc, order) => {
             const date = new Date(order.created_at).toLocaleDateString('en-US', {
                 month: 'short',
@@ -97,7 +98,6 @@ export const Dashboard = () => {
         .map(([date, amount]) => ({ date, amount }))
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    // Define columns for recent orders table
     const recentColumns = [
         {
             title: 'Order ID',
@@ -125,13 +125,10 @@ export const Dashboard = () => {
         },
     ];
 
-    const isLoading = ordersLoading || usersLoading || recentLoading;
-
     return (
         <div>
             <h1 style={{ marginBottom: 24 }}>Dashboard</h1>
 
-            {/* Key Metrics Cards */}
             <Row gutter={[16, 16]}>
                 <Col xs={24} sm={12} lg={6}>
                     <Card loading={isLoading}>
@@ -149,7 +146,7 @@ export const Dashboard = () => {
                             value={totalRevenue}
                             precision={2}
                             prefix={<DollarOutlined />}
-                            formatter={formatCurrency}
+                            formatter={(value) => formatCurrency(value as number)} // ✅ fix type
                         />
                     </Card>
                 </Col>
@@ -166,25 +163,16 @@ export const Dashboard = () => {
                     <Card loading={isLoading}>
                         <Statistic
                             title="Products Sold"
-                            value={orders.reduce((sum, order) => {
-                                // Count total items across all orders
-                                // Note: Requires order_items to be populated; we estimate from total_orders
-                                return sum + (order.order_items?.length || 0);
-                            }, 0)}
+                            value={orders.reduce((sum, order) => sum + (order.order_items?.length || 0), 0)}
                             prefix={<ShoppingOutlined />}
                         />
                     </Card>
                 </Col>
             </Row>
 
-            {/* Charts Row */}
             <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                 <Col xs={24} lg={14}>
-                    <Card
-                        title="Revenue Trend"
-                        loading={isLoading}
-                        style={{ height: 340 }}
-                    >
+                    <Card title="Revenue Trend" loading={isLoading} style={{ height: 340 }}>
                         <ResponsiveContainer width="100%" height={250}>
                             <AreaChart
                                 data={trendData.length > 0 ? trendData : [{ date: 'No Data', amount: 0 }]}
@@ -192,30 +180,17 @@ export const Dashboard = () => {
                             >
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="date" />
-                                <YAxis
-                                    tickFormatter={(value) => formatCurrency(value)}
-                                />
+                                <YAxis tickFormatter={(value) => formatCurrency(value)} />
                                 <Tooltip
-                                    formatter={(value: number) => formatCurrency(value)}
-                                />
-                                <Area
-                                    type="monotone"
-                                    dataKey="amount"
-                                    stroke="#1677ff"
-                                    fill="#1677ff"
-                                    fillOpacity={0.3}
-                                />
+                                    formatter={(value: any) => value !== undefined ? formatCurrency(value) : '' }
+                                />                             
+                                <Area type="monotone" dataKey="amount" stroke="#1677ff" fill="#1677ff" fillOpacity={0.3} />
                             </AreaChart>
                         </ResponsiveContainer>
                     </Card>
                 </Col>
-
                 <Col xs={24} lg={10}>
-                    <Card
-                        title="Order Status Distribution"
-                        loading={isLoading}
-                        style={{ height: 340 }}
-                    >
+                    <Card title="Order Status Distribution" loading={isLoading} style={{ height: 340 }}>
                         <ResponsiveContainer width="100%" height={250}>
                             <PieChart>
                                 <Pie
@@ -224,7 +199,7 @@ export const Dashboard = () => {
                                     cy="50%"
                                     labelLine={false}
                                     label={({ name, percent }) =>
-                                        percent > 0.05 ? `${name} ${(percent * 100).toFixed(0)}%` : ''
+                                        percent && percent > 0.05 ? `${name} ${(percent * 100).toFixed(0)}%` : ''
                                     }
                                     outerRadius={80}
                                     fill="#8884d8"
@@ -245,14 +220,9 @@ export const Dashboard = () => {
                 </Col>
             </Row>
 
-            {/* Recent Orders Table */}
-            <Card
-                title="Recent Orders"
-                loading={isLoading}
-                style={{ marginTop: 16 }}
-            >
+            <Card title="Recent Orders" loading={isLoading} style={{ marginTop: 16 }}>
                 <Table
-                    dataSource={recentOrders?.data || []}
+                    dataSource={recentOrders}
                     columns={recentColumns}
                     rowKey="id"
                     pagination={false}

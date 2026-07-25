@@ -7,14 +7,7 @@ import { Edit, useForm } from '@refinedev/antd';
 import { Form, Input, InputNumber } from 'antd';
 
 export const ProductEdit = () => {
-    // useForm fetches the product by ID and handles updates.
-    const { formProps, saveButtonProps, queryResult } = useForm({
-        resource: 'products',
-        // id is automatically taken from URL
-    });
-
-    // You can access the fetched product data if needed
-    // const productData = queryResult?.data?.data;
+    const { formProps, saveButtonProps, query } = useForm({ resource: 'products' }); // ✅ queryResult → query
 
     return (
         <Edit saveButtonProps={saveButtonProps}>
@@ -27,10 +20,7 @@ export const ProductEdit = () => {
                     <Input placeholder="Enter product name" />
                 </Form.Item>
 
-                <Form.Item
-                    label="Description"
-                    name="description"
-                >
+                <Form.Item label="Description" name="description">
                     <Input.TextArea rows={3} placeholder="Enter product description" />
                 </Form.Item>
 

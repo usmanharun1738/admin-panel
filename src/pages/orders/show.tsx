@@ -4,21 +4,18 @@
 // -----------------------------------------------------------------------------
 
 import { useShow, useUpdate } from '@refinedev/core';
-import { Show, Descriptions, Table, Select, Button, Space, message } from 'antd';
+import { Show } from '@refinedev/antd'; // ✅ changed: import Show from @refinedev/antd
+import { Descriptions, Table, Select, Button, Space, message } from 'antd';
 import type { Order, OrderItem } from '../../types';
 import { StatusBadge } from '../../components/StatusBadge';
 
 export const OrderShow = () => {
-    // Fetch order data by ID from the URL
-    const { queryResult } = useShow<Order>({
-        resource: 'orders',
-    });
-    const { data, isLoading } = queryResult;
+    const { query } = useShow<Order>({ resource: 'orders' }); // ✅ queryResult → query
+    const { data, isLoading } = query;
     const order = data?.data;
 
-    const { mutate: updateStatus, isLoading: isUpdating } = useUpdate<Order>();
-
-    // Handle status change
+    const { mutate: updateStatus, mutation } = useUpdate<Order>();
+    const isUpdating = mutation.isPending;
     const handleStatusChange = (newStatus: Order['status']) => {
         if (!order) return;
         updateStatus(
@@ -30,8 +27,7 @@ export const OrderShow = () => {
             {
                 onSuccess: () => {
                     message.success('Order status updated');
-                    // Refresh data by refetching the query
-                    queryResult.refetch();
+                    query.refetch();
                 },
                 onError: () => {
                     message.error('Failed to update status');
@@ -45,7 +41,6 @@ export const OrderShow = () => {
 
     return (
         <Show>
-            {/* Order header information */}
             <Descriptions bordered column={2}>
                 <Descriptions.Item label="Order ID">{order.id}</Descriptions.Item>
                 <Descriptions.Item label="Created At">
@@ -70,18 +65,11 @@ export const OrderShow = () => {
                                 </Select.Option>
                             ))}
                         </Select>
-                        <Button
-                            type="primary"
-                            loading={isUpdating}
-                            onClick={() => {
-                                // This is optional; the select triggers update directly
-                            }}
-                        >
+                        <Button type="primary" loading={isUpdating}>
                             Update Status
                         </Button>
                     </Space>
                 </Descriptions.Item>
-                {/* Optionally show address details if fetched */}
                 {order.address && (
                     <>
                         <Descriptions.Item label="Street">{order.address.street}</Descriptions.Item>
@@ -92,7 +80,6 @@ export const OrderShow = () => {
                 )}
             </Descriptions>
 
-            {/* Order Items Table */}
             <Table
                 dataSource={order.order_items}
                 rowKey="id"
@@ -102,10 +89,7 @@ export const OrderShow = () => {
             >
                 <Table.Column dataIndex="id" title="Item ID" />
                 <Table.Column dataIndex="product_id" title="Product ID" />
-                <Table.Column
-                    dataIndex="quantity"
-                    title="Quantity"
-                />
+                <Table.Column dataIndex="quantity" title="Quantity" />
                 <Table.Column
                     dataIndex="unit_price"
                     title="Unit Price"
