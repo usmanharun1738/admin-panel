@@ -1,22 +1,14 @@
-// -----------------------------------------------------------------------------
-// Admin Panel – Main Application Entry
-// Configures Refine with data provider, auth provider, router, and resources.
-// -----------------------------------------------------------------------------
-
-import { Refine } from '@refinedev/core';
+import { Refine, Authenticated } from '@refinedev/core';
 import { RefineKbar, RefineKbarProvider } from '@refinedev/kbar';
-import routerProvider from '@refinedev/react-router-v6';
-import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
-import { ThemedLayout, useNotificationProvider } from '@refinedev/antd'; // ✅ Changed
+import routerProvider from '@refinedev/react-router';
+import { BrowserRouter, Routes, Route, Outlet, Navigate } from 'react-router-dom';
+import { ThemedLayout, useNotificationProvider, AuthPage } from '@refinedev/antd';
 
 import '@refinedev/antd/dist/reset.css';
-import './index.css'; // optional custom styles
 
-// Import providers
 import { dataProvider } from './providers/dataProvider';
 import { authProvider } from './providers/authProvider';
 
-// Import pages
 import {
   ProductList,
   ProductCreate,
@@ -26,6 +18,10 @@ import {
   UserList,
   Dashboard,
 } from './pages';
+
+const CustomTitle = () => (
+  <span style={{ fontSize: 20, fontWeight: 'bold' }}>Admin Panel</span>
+);
 
 function App() {
   return (
@@ -67,12 +63,17 @@ function App() {
           }}
         >
           <Routes>
-            {/* ✅ Wrap Routes inside ThemedLayoutV2 */}
+            {/* Login route – public */}
+            <Route path="/login" element={<AuthPage type="login" />} />
+
+            {/* Protected routes with authentication guard */}
             <Route
               element={
-                <ThemedLayout Title={() => <span style={{ fontSize: 20, fontWeight: 'bold' }}>Admin Panel</span>}>
-                  <Outlet />
-                </ThemedLayout>
+                <Authenticated key="authenticated-layout" fallback={<Navigate to="/login" replace />}>
+                  <ThemedLayout Title={CustomTitle}>
+                    <Outlet />
+                  </ThemedLayout>
+                </Authenticated>
               }
             >
               <Route path="/" element={<Dashboard />} />
@@ -89,6 +90,9 @@ function App() {
                 <Route index element={<UserList />} />
               </Route>
             </Route>
+
+            {/* Catch‑all redirect to dashboard */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           <RefineKbar />
         </Refine>

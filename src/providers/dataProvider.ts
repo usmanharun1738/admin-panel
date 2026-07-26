@@ -39,7 +39,7 @@ export const dataProvider = (): DataProvider => ({
     let url = `/${resource}/${id}`;
     let method: 'patch' | 'put' = 'patch';
 
-    // ✅ safely check if we are updating order status
+    //safely check if we are updating order status
     if (resource === 'orders' && (variables as any)?.status) {
       url = `/admin/orders/${id}/status`;
       method = 'patch';

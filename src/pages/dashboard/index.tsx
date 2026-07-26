@@ -44,7 +44,7 @@ const formatCurrency = (value: number | string) => {
 };
 
 export const Dashboard = () => {
-    // ✅ useList returns { query, result } in v5, so we destructure 'result' to get data
+    //useList returns { query, result } in v5, so we destructure 'result' to get data
     const { result: ordersResult, query: ordersQuery } = useList<Order>({
         resource: 'orders',
         pagination: { pageSize: 1000 },

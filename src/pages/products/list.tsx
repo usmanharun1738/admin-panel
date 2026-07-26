@@ -3,7 +3,8 @@
 // Uses Refine's useTable hook for data fetching, sorting, pagination.
 // -----------------------------------------------------------------------------
 
-import { useTable, useNavigation } from '@refinedev/core';
+import { useNavigation } from '@refinedev/core';
+import { useTable } from '@refinedev/antd';
 import { List, Table, Space, Button, Tag } from 'antd';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { Product } from '../../types';
@@ -59,7 +60,7 @@ export const ProductList = () => {
         {
             title: 'Actions',
             key: 'actions',
-            render: (_, record: Product) => (
+            render: (_:unknown, record: Product) => (
                 <Space>
                     <Button
                         type="primary"
