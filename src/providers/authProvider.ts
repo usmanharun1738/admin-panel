@@ -6,7 +6,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 export const authProvider: AuthProvider = {
   login: async ({ email, password }) => {
     try {
-      const response = await axios.post(`${API_URL}/login`, { email, password });
+      const response = await axios.post(`${API_URL}/v1/login`, { email, password });
       const { token } = response.data;
       localStorage.setItem('refine-auth', token);
       return { success: true, redirectTo: '/' };
