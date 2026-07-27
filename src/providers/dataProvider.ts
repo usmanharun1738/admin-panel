@@ -1,3 +1,4 @@
+// admin-panel/src/providers/dataProvider.ts
 import { DataProvider } from '@refinedev/core';
 import axios, { AxiosInstance } from 'axios';
 
@@ -16,9 +17,15 @@ httpClient.interceptors.request.use((config) => {
   return config;
 });
 
+// Admin resources that should be prefixed with /admin
+const ADMIN_RESOURCES = ['products', 'orders', 'users'];
+
 export const dataProvider = (): DataProvider => ({
   getList: async ({ resource }) => {
-    const response = await httpClient.get(`/${resource}`);
+    const url = ADMIN_RESOURCES.includes(resource)
+      ? `/admin/${resource}`
+      : `/${resource}`;
+    const response = await httpClient.get(url);
     return {
       data: response.data,
       total: response.data.length,
@@ -26,7 +33,10 @@ export const dataProvider = (): DataProvider => ({
   },
 
   getOne: async ({ resource, id }) => {
-    const response = await httpClient.get(`/${resource}/${id}`);
+    const url = ADMIN_RESOURCES.includes(resource)
+      ? `/admin/${resource}/${id}`
+      : `/${resource}/${id}`;
+    const response = await httpClient.get(url);
     return { data: response.data };
   },
 
@@ -36,21 +46,25 @@ export const dataProvider = (): DataProvider => ({
   },
 
   update: async ({ resource, id, variables }) => {
-    let url = `/${resource}/${id}`;
-    let method: 'patch' | 'put' = 'patch';
-
-    //safely check if we are updating order status
+    // Special handling for order status updates – uses admin PATCH endpoint
     if (resource === 'orders' && (variables as any)?.status) {
-      url = `/admin/orders/${id}/status`;
-      method = 'patch';
+      const response = await httpClient.patch(`/admin/orders/${id}/status`, variables);
+      return { data: response.data };
     }
 
-    const response = await httpClient[method](url, variables);
+    // For other admin resources, use admin prefix
+    const url = ADMIN_RESOURCES.includes(resource)
+      ? `/admin/${resource}/${id}`
+      : `/${resource}/${id}`;
+    const response = await httpClient.patch(url, variables);
     return { data: response.data };
   },
 
   deleteOne: async ({ resource, id }) => {
-    const response = await httpClient.delete(`/${resource}/${id}`);
+    const url = ADMIN_RESOURCES.includes(resource)
+      ? `/admin/${resource}/${id}`
+      : `/${resource}/${id}`;
+    const response = await httpClient.delete(url);
     return { data: response.data };
   },
 
