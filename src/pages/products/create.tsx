@@ -32,6 +32,13 @@ export const ProductCreate = () => {
                 </Form.Item>
 
                 <Form.Item
+                    label="Image URL"
+                    name="image_url"
+                >
+                    <Input placeholder="https://example.com/product-image.jpg" />
+                </Form.Item>
+
+                <Form.Item
                     label="Price"
                     name="price"
                     rules={[

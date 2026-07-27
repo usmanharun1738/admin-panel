@@ -1,7 +1,8 @@
 import { useNavigation, useUpdate } from '@refinedev/core';
-import { useTable } from '@refinedev/antd'; //  Import from @refinedev/antd
-import { List, Table, Space, Button, Dropdown, Menu, message } from 'antd';
+import { useTable } from '@refinedev/antd';
+import { List, Table, Space, Button, Dropdown, message } from 'antd';
 import { EyeOutlined, MoreOutlined } from '@ant-design/icons';
+import type { MenuProps } from 'antd';
 import type { Order } from '../../types';
 import { StatusBadge } from '../../components/StatusBadge';
 
@@ -33,17 +34,13 @@ export const OrderList = () => {
         );
     };
 
-    const getStatusMenu = (orderId: number) => {
+    const getStatusMenuItems = (orderId: number): MenuProps['items'] => {
         const statusOptions: Order['status'][] = ['pending', 'paid', 'shipped', 'delivered'];
-        return (
-            <Menu
-                onClick={({ key }) => handleStatusChange(orderId, key as Order['status'])}
-                items={statusOptions.map((status) => ({
-                    key: status,
-                    label: <StatusBadge status={status} />,
-                }))}
-            />
-        );
+        return statusOptions.map((status) => ({
+            key: status,
+            label: <StatusBadge status={status} />,
+            onClick: () => handleStatusChange(orderId, status),
+        }));
     };
 
     const columns = [
@@ -99,7 +96,7 @@ export const OrderList = () => {
                     >
                         View
                     </Button>
-                    <Dropdown overlay={getStatusMenu(record.id)} trigger={['click']}>
+                    <Dropdown menu={{ items: getStatusMenuItems(record.id) }} trigger={['click']}>
                         <Button size="small" icon={<MoreOutlined />} />
                     </Dropdown>
                 </Space>

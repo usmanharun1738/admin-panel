@@ -3,15 +3,33 @@
 // Uses Refine's useTable hook for data fetching, sorting, pagination.
 // -----------------------------------------------------------------------------
 
-import { useNavigation } from '@refinedev/core';
+import { useNavigation, useDelete } from '@refinedev/core';
 import { useTable } from '@refinedev/antd';
-import { List, Table, Space, Button, Tag } from 'antd';
-import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { List, Table, Space, Button, Tag, message, Popconfirm } from 'antd';
+import { EditOutlined, DeleteOutlined, PictureOutlined } from '@ant-design/icons';
 import type { Product } from '../../types';
 
 export const ProductList = () => {
     const { tableProps } = useTable<Product>({ resource: 'products' });
-    const { edit, create } = useNavigation();
+    const { edit } = useNavigation();
+    const { mutate: deleteProduct } = useDelete();
+
+    const handleDelete = (id: number) => {
+        deleteProduct(
+            {
+                resource: 'products',
+                id,
+            },
+            {
+                onSuccess: () => {
+                    message.success('Product deleted successfully');
+                },
+                onError: () => {
+                    message.error('Failed to delete product');
+                },
+            }
+        );
+    };
 
     const columns = [
         {
@@ -19,6 +37,18 @@ export const ProductList = () => {
             dataIndex: 'id',
             key: 'id',
             sorter: true,
+        },
+        {
+            title: 'Image',
+            dataIndex: 'image_url',
+            key: 'image_url',
+            render: (value: string) =>
+                value ? (
+                    <img src={value} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4 }} />
+                ) : (
+                    <PictureOutlined style={{ fontSize: 20, color: '#d9d9d9' }} />
+                ),
+            width: 60,
         },
         {
             title: 'Name',
@@ -60,7 +90,7 @@ export const ProductList = () => {
         {
             title: 'Actions',
             key: 'actions',
-            render: (_:unknown, record: Product) => (
+            render: (_: unknown, record: Product) => (
                 <Space>
                     <Button
                         type="primary"
@@ -70,17 +100,23 @@ export const ProductList = () => {
                     >
                         Edit
                     </Button>
-                    <Button
-                        type="primary"
-                        danger
-                        icon={<DeleteOutlined />}
-                        size="small"
-                        onClick={() => {
-                            // Delete logic can be added here using useDelete hook
-                        }}
+                    <Popconfirm
+                        title="Delete product"
+                        description="Are you sure you want to delete this product?"
+                        onConfirm={() => handleDelete(record.id)}
+                        okText="Delete"
+                        cancelText="Cancel"
+                        okButtonProps={{ danger: true }}
                     >
-                        Delete
-                    </Button>
+                        <Button
+                            type="primary"
+                            danger
+                            icon={<DeleteOutlined />}
+                            size="small"
+                        >
+                            Delete
+                        </Button>
+                    </Popconfirm>
                 </Space>
             ),
         },

@@ -67,7 +67,7 @@ export const Dashboard = () => {
     const isLoading = ordersQuery.isLoading || usersQuery.isLoading || recentQuery.isLoading;
 
     const totalOrders = orders.length;
-    const totalRevenue = orders.reduce((sum, order) => sum + order.total_price, 0);
+    const totalRevenue = orders.reduce((sum, order) => sum + (Number(order.total_price) || 0), 0);
     const totalUsers = users.length;
 
     // Order status distribution
@@ -163,7 +163,11 @@ export const Dashboard = () => {
                     <Card loading={isLoading}>
                         <Statistic
                             title="Products Sold"
-                            value={orders.reduce((sum, order) => sum + (order.order_items?.length || 0), 0)}
+                            value={orders.reduce(
+                                (sum, order) =>
+                                    sum + (order.order_items?.reduce((itemSum, item) => itemSum + (item.quantity || 0), 0) || 0),
+                                0
+                            )}
                             prefix={<ShoppingOutlined />}
                         />
                     </Card>
@@ -192,29 +196,34 @@ export const Dashboard = () => {
                 <Col xs={24} lg={10}>
                     <Card title="Order Status Distribution" loading={isLoading} style={{ height: 340 }}>
                         <ResponsiveContainer width="100%" height={250}>
-                            <PieChart>
-                                <Pie
-                                    data={statusChartData.length > 0 ? statusChartData : [{ name: 'No Orders', value: 1 }]}
-                                    cx="50%"
-                                    cy="50%"
-                                    labelLine={false}
-                                    label={({ name, percent }) =>
-                                        percent && percent > 0.05 ? `${name} ${(percent * 100).toFixed(0)}%` : ''
-                                    }
-                                    outerRadius={80}
-                                    fill="#8884d8"
-                                    dataKey="value"
-                                >
-                                    {statusChartData.map((entry) => (
-                                        <Cell
-                                            key={entry.status}
-                                            fill={COLORS[entry.status as keyof typeof COLORS] || '#8884d8'}
-                                        />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                                <Legend />
-                            </PieChart>
+                            {statusChartData.length > 0 ? (
+                                <PieChart>
+                                    <Pie
+                                        data={statusChartData}
+                                        cx="50%"
+                                        cy="50%"
+                                        labelLine={false}
+                                        label={({ name, percent }) =>
+                                            percent && percent > 0.05 ? `${name} ${(percent * 100).toFixed(0)}%` : ''
+                                        }
+                                        outerRadius={80}
+                                        dataKey="value"
+                                    >
+                                        {statusChartData.map((entry) => (
+                                            <Cell
+                                                key={entry.status}
+                                                fill={COLORS[entry.status as keyof typeof COLORS] || '#8884d8'}
+                                            />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip />
+                                    <Legend />
+                                </PieChart>
+                            ) : (
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                                    <span style={{ color: '#999' }}>No order data yet</span>
+                                </div>
+                            )}
                         </ResponsiveContainer>
                     </Card>
                 </Col>
