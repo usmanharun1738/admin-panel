@@ -26,9 +26,17 @@ export const dataProvider = (): DataProvider => ({
       ? `/admin/${resource}`
       : `/${resource}`;
     const response = await httpClient.get(url);
+    // Handle both paginated { data, pagination } and plain array responses
+    const body = response.data;
+    if (body && Array.isArray(body.data)) {
+      return {
+        data: body.data,
+        total: body.pagination?.total_items || body.data.length,
+      };
+    }
     return {
-      data: response.data,
-      total: response.data.length,
+      data: body,
+      total: Array.isArray(body) ? body.length : 0,
     };
   },
 
