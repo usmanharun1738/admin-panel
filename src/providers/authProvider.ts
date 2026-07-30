@@ -7,8 +7,8 @@ export const authProvider: AuthProvider = {
   login: async ({ email, password }) => {
     try {
       const response = await axios.post(`${API_URL}/v1/login`, { email, password });
-      const { token } = response.data;
-      localStorage.setItem('refine-auth', token);
+      const { access_token } = response.data;
+      localStorage.setItem('refine-auth', access_token);
       return { success: true, redirectTo: '/' };
     } catch (error: any) {
       const errorMessage = error?.response?.data?.error || 'Invalid email or password';
