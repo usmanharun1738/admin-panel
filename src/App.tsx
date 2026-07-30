@@ -3,6 +3,7 @@ import { RefineKbar, RefineKbarProvider } from '@refinedev/kbar';
 import routerProvider from '@refinedev/react-router';
 import { BrowserRouter, Routes, Route, Outlet, Navigate } from 'react-router-dom';
 import { ThemedLayout, useNotificationProvider, AuthPage } from '@refinedev/antd';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import '@refinedev/antd/dist/reset.css';
 
@@ -23,15 +24,32 @@ const CustomTitle = () => (
   <span style={{ fontSize: 20, fontWeight: 'bold' }}>Admin Panel</span>
 );
 
+// Global React Query client with sensible caching defaults
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000, // 30 seconds – refetch after this time
+      gcTime: 5 * 60 * 1000, // 5 minutes – keep in memory
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
 function App() {
   return (
     <BrowserRouter>
       <RefineKbarProvider>
+        <QueryClientProvider client={queryClient}>
         <Refine
           authProvider={authProvider}
           dataProvider={dataProvider()}
           routerProvider={routerProvider}
           notificationProvider={useNotificationProvider}
+          options={{
+            syncWithLocation: true,
+            warnWhenUnsavedChanges: true,
+          }}
           resources={[
             {
               name: 'dashboard',
@@ -57,10 +75,6 @@ function App() {
               meta: { label: 'Users' },
             },
           ]}
-          options={{
-            syncWithLocation: true,
-            warnWhenUnsavedChanges: true,
-          }}
         >
           <Routes>
             {/* Login route – public */}
@@ -96,6 +110,7 @@ function App() {
           </Routes>
           <RefineKbar />
         </Refine>
+      </QueryClientProvider>
       </RefineKbarProvider>
     </BrowserRouter>
   );
